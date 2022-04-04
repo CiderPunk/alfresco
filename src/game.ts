@@ -172,9 +172,7 @@ export class Game implements IGame{
     this.addEnt(new Bounds(this, {x:8,y:7}, CollisionGroup.player))
     this.addEnt(new Bounds(this, {x:20,y:20}, CollisionGroup.projectile))
 
-    const ant = this.spawnAnt()
-    ant.init(angToVect(Math.random() * 2 * Math.PI,4), this.player, 30)
-
+    
 
     const picnic =    this.picnicMesh.clone("picnic", this.rootNode, false)
     picnic.scaling.scaleInPlace(1.5)
