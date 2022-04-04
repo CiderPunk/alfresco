@@ -7,7 +7,7 @@ import { CollisionGroup, EntityType } from "../enums";
 import { vectToAngle } from "../helpers/mathutils";
 import { cloneAnim } from "../helpers/meshhelpers";
 import { Pool, PooledItem } from "../helpers/pool";
-import { IV2, IEntity, IPooledItem, IGame, IDamageable } from "../interfaces";
+import { IV2, IEntity, IPooledItem, IGame,  IKillable } from "../interfaces";
 import { Entity } from "./entity";
 import { Killable } from "./killable";
 
@@ -17,21 +17,25 @@ export class AntPool extends Pool<Ant>{
   }
 }
 
-export class Ant extends Killable implements IPooledItem<Ant>, IDamageable{
+export class Ant extends Killable implements IPooledItem<Ant>, IKillable{
+
+  static readonly antHealth =40
+  static readonly points = 100
 
   static antMeshNode: TransformNode;
   static animations: Map<string, AnimationGroup>
-  mesh: TransformNode;
-  walkAnim: AnimationGroup;
-  idleAnim: AnimationGroup;
-  biteAnim: AnimationGroup;
+  mesh: TransformNode
+  walkAnim: AnimationGroup
+  idleAnim: AnimationGroup
+  biteAnim: AnimationGroup
   static pos = new Vec2()
-  target: IEntity;
+  target:IKillable
   diff: Vec2 = new Vec2()
-
+  biteTime: number = 0
+  biteCooldown: number = 0
 
   public constructor(name:string, game:IGame, private pool:AntPool){
-    super(game, {x:0, y:0},0,40)
+    super(game, {x:0, y:0},0,Ant.antHealth)
      //pooled entities gotta start innactive
     this.body.setActive(false)
     this.mesh = Ant.antMeshNode.clone(name + '_mesh', game.rootNode, false)
@@ -42,8 +46,7 @@ export class Ant extends Killable implements IPooledItem<Ant>, IDamageable{
     this.mesh.setEnabled(false)    
   }
 
-
-  public init(position:IV2, target:IEntity, health:number){
+  public init(position:IV2, target:IKillable, health:number){
     this.health = health
     this.target = target
     this.body.setPosition(Ant.pos.set(position.x, position.y))
@@ -54,6 +57,10 @@ export class Ant extends Killable implements IPooledItem<Ant>, IDamageable{
     this.alive = true
   }
  
+  reset(): boolean {
+    this.Free()
+    return false
+  }
 
 
   Free():void{    
@@ -65,6 +72,8 @@ export class Ant extends Killable implements IPooledItem<Ant>, IDamageable{
     this.biteAnim.stop()
     this.mesh.setEnabled(false)
     this.body.setActive(false)
+    this.biteCooldown = 0
+    this.biteTime = 0
   }
 
   createBody(world: World, position: IV2, orientation: number) {
@@ -83,20 +92,40 @@ export class Ant extends Killable implements IPooledItem<Ant>, IDamageable{
   }
 
   prePhysics(dT: number): boolean {
-    this.diff.set(this.target.getPosition().x, this.target.getPosition().y).sub(this.body.getPosition())
-    if (this.diff.lengthSquared() < 2){
-      console.log("bite!")
-      this.biteAnim.start()
+
+    if (this.target.alive){
+      this.diff.set(this.target.getPosition().x, this.target.getPosition().y).sub(this.body.getPosition())
+      if (this.biteCooldown > 0){
+        this.biteCooldown -= dT
+      }
+      if (this.biteTime > 0){
+        this.biteTime -= dT
+        if (this.biteTime < 0){ 
+          console.log("bite hit")
+          this.biteTime = 0
+          if (this.diff.lengthSquared() < 2){
+            this.target.hurt(20, this, "Bitten")
+          }
+        }
+      }
+      
+
+      if (this.biteCooldown <= 0 && this.diff.lengthSquared() < 2){
+        this.biteTime = 150
+        this.biteCooldown  = 400
+        console.log("start bite!")
+        this.biteAnim.start(false)
+      }
+
+      this.diff.normalize()
+      this.diff.mul(20)
+      this.body.applyForceToCenter(this.diff)
+      
     }
+    else{
+      this.walkAnim.stop()
 
-
-
-    this.diff.normalize()
-    this.diff.mul(20)
-    this.body.applyForceToCenter(this.diff)
-    
-
-
+    }
     if (! this.alive){
       this.mesh.setEnabled(false)
       this.Free()
@@ -105,13 +134,21 @@ export class Ant extends Killable implements IPooledItem<Ant>, IDamageable{
 
     return true
   }
-  preDraw(dt: number): void {
 
-    //lower position 
-    this.mesh.position.set(this.getPosition().x,1, this.getPosition().y)
+
+  killed(other:IEntity): void {
+    this.game.addScore(Ant.points)
+  }
+  
+
+
+
+  preDraw(dt: number): void {
+    this.mesh.position.set(this.getPosition().x,0.5, this.getPosition().y)
     // angle
     this.mesh.rotation.set(0, (Math.PI / 2) -vectToAngle(  this.diff ), 0 )
   }
+
   get type(): EntityType {
     return EntityType.enemy
   }

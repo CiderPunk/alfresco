@@ -25,6 +25,7 @@ export class Pool<T extends IPooledItem<T>> implements IPool{
     this.pool = new FastArray<T>();
   }
 
+
   public Release(item:T){
     this.pool.push(item);
   }

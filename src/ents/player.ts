@@ -1,22 +1,22 @@
-
 import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup"
 import { Matrix, Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { AssetsManager } from "@babylonjs/core/Misc/assetsManager"
 import { LocalControl } from "../controls/localcontrol"
-import { IController, IDamageable, IEntity, IGame, IShooter, IV2, IWeapon } from "../interfaces"
-import { lerpLimit, vectToAngle } from "../helpers/mathutils"
-import { Entity } from "./entity"
+import { IController,  IEntity, IGame, IKillable, IShooter, IV2, IWeapon } from "../interfaces"
+import { vectToAngle } from "../helpers/mathutils"
 import { cloneAnim } from "../helpers/meshhelpers"
 import { ShotGun } from "../weapons/shotgun"
 import { CollisionGroup, EntityType } from "../enums"
 import planck = require("planck")
 import { Vec2 } from "planck"
 import { Killable } from "./killable"
-import { MachineGun } from "../weapons/machinegun"
+import { HealthBar } from "../ui/healthbar"
 
 
-export class Player extends Killable implements IShooter,  IDamageable{
+export class Player extends Killable implements IShooter,  IKillable{
+
+  static readonly playerHealth = 100
 
 
   protected static lowerMesh:TransformNode
@@ -33,6 +33,9 @@ export class Player extends Killable implements IShooter,  IDamageable{
   shootAnim: AnimationGroup
   weapon: IWeapon
   private _groupIndex: number
+  dieUpper: AnimationGroup
+  dieLower: AnimationGroup
+  healhBar: HealthBar
 
   get type(): EntityType { return EntityType.player }
   
@@ -47,8 +50,6 @@ export class Player extends Killable implements IShooter,  IDamageable{
     return vectToAngle(this.fireVect)
   }
 
-
-
   public createBody(world:planck.World, position:IV2,  orientation:number){
     this._groupIndex = -1
     const body = world.createBody({type: planck.Body.DYNAMIC,position: new planck.Vec2(position), angle: orientation, angularDamping:2})
@@ -61,6 +62,17 @@ export class Player extends Killable implements IShooter,  IDamageable{
     return body
   }
 
+  public reset():boolean{
+    this.health = Player.playerHealth
+    this.alive = true
+    this.body.setPosition(new Vec2(0,0))
+    this.body.setActive(true)
+    this.dieLower.stop()
+    this.dieUpper.stop()
+    this.standAnim.start(true)
+    this.idleAnim.start(true)
+    return true
+  }
 
   collision(other: IEntity) {
    // throw new Error("Method not implemented.")
@@ -73,25 +85,33 @@ export class Player extends Killable implements IShooter,  IDamageable{
 
 
   constructor(game:IGame, location:IV2){
-    super(game,location,0,100)
+    super(game,location,0,Player.playerHealth)
+
+    this.healhBar = new HealthBar()
+
+
     this.lower = Player.lowerMesh.clone("playerlower", game.rootNode, false)
     this.upper = Player.upperMesh.clone("playerupper", game.rootNode, false)
 
     this.upper.rotationQuaternion = null
     this.lower.rotationQuaternion = null
 
-    this.walkAnim = cloneAnim(Player.animations.get("walk"), "playerwalk", this.lower)
-    this.standAnim = cloneAnim(Player.animations.get("stand"), "playerstand", this.lower)
-    this.idleAnim = cloneAnim(Player.animations.get("idle"), "playeridle", this.upper)
-    this.shootAnim = cloneAnim(Player.animations.get("shoot"), "playershoot", this.upper)
+    this.walkAnim = cloneAnim(Player.animations.get("walk"), "player_walk", this.lower)
+    this.standAnim = cloneAnim(Player.animations.get("stand"), "player_stand", this.lower)
+    this.dieLower = cloneAnim(Player.animations.get("die-lower"), "player_lower_die", this.lower)
+    this.idleAnim = cloneAnim(Player.animations.get("idle"), "player_idle", this.upper)
+    this.shootAnim = cloneAnim(Player.animations.get("shoot"), "player_shoot", this.upper)
+    this.dieUpper = cloneAnim(Player.animations.get("die-upper"), "player_upper_die", this.upper)
 
     this.shootAnim.loopAnimation = false
     this.game.scene.addAnimationGroup(this.walkAnim)   
     this.game.scene.addAnimationGroup(this.standAnim)   
     this.game.scene.addAnimationGroup(this.idleAnim)     
     this.game.scene.addAnimationGroup(this.shootAnim)     
+    this.game.scene.addAnimationGroup(this.dieLower)     
+    this.game.scene.addAnimationGroup(this.dieUpper)     
 
-  
+    this.dieLower.stop()
     this.standAnim.start(true)
     this.idleAnim.start(true)
 
@@ -109,34 +129,48 @@ export class Player extends Killable implements IShooter,  IDamageable{
     this.shootAnim.start();
   }
 
-
   static force:Vec2 = new Vec2()
 
   prePhysics(dT: number): boolean {
-
-    this.weapon.update(dT)
-    this.controller.update()
-    Player.force.set(this.controller.joySteer.x, this.controller.joySteer.y).mul(20)
-/*
-    const scale = 0.1
-    this.vel.x = lerpLimit(this.vel.x, this.controller.joySteer.x,scale *dT);
-    this.vel.y = lerpLimit(this.vel.y, this.controller.joySteer.y,scale * dT);
-*/
-    this.body.applyForceToCenter(Player.force)
+    this.healhBar.updateHealth(this.health / Player.playerHealth)
+    if (this.alive){
+      this.weapon.update(dT)
+      this.controller.update()
+      Player.force.set(this.controller.joySteer.x, this.controller.joySteer.y).mul(20)
+      this.body.applyForceToCenter(Player.force)
     
-    //.setLinearVelocity(this.vel.mul(4))
-    
-    //shooting
-    if (this.controller.fire1){
-      this.weapon.fire(this)
+      //shooting
+      if (this.controller.fire1){
+        this.weapon.fire(this)
+      }
+    }
+    else{
+      if (this.controller.fire1){
+        this.game.reset()
+      }
     }
     return true
   }
 
+  
+  killed(): void {
+    this.walkAnim.stop()
+    this.shootAnim.stop()
+    this.idleAnim.stop()
+    this.standAnim.stop()
+
+    this.dieLower.start(false)
+    this.dieUpper.start(false)
+    this.body.setActive(false)
+
+    this.game.gameOver()
+  }
 
   preDraw(dt: number): void {
 
-
+    if (!this.alive){
+      return
+    }
     const vel = this.body.getLinearVelocity()
 
     //animation and motion damping
@@ -153,7 +187,6 @@ export class Player extends Killable implements IShooter,  IDamageable{
       }
     }
 
-
     //lower position 
     this.lower.position.set(this.getPosition().x,0, this.getPosition().y)
     this.upper.position.copyFrom(this.lower.position)
@@ -161,7 +194,6 @@ export class Player extends Killable implements IShooter,  IDamageable{
     //torso angle
     const upperAngle = vectToAngle(this.controller.joyAim)
     this.upper.rotation.set(0, upperAngle + (Math.PI / 2), 0 )
-
   }
 
 

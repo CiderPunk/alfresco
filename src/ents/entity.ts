@@ -17,10 +17,12 @@ export abstract class Entity implements IEntity{
   getPosition(): IV2 {
     return this.body.getPosition()
   }
+  
   //  abstract get position():Vector3
   abstract createBody(world:planck.World, position:IV2, orientation:number):planck.Body
   abstract collision(other: IEntity) 
-
+  abstract reset():boolean 
+  
   abstract prePhysics(dT: number): boolean 
   abstract preDraw(dt: number): void
   abstract get type(): EntityType 

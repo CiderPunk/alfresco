@@ -5,7 +5,7 @@ import { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { CollisionGroup, EntityType } from "../enums";
 import { Pool } from "../helpers/pool";
-import { IEntity, IGame, IPool, IPooledItem, IProjectile, IsDamageable, IShooter, IV2 } from "../interfaces";
+import { IEntity, IGame, IPool, IPooledItem, IProjectile,  IShooter, IsKillable, IV2 } from "../interfaces";
 import { Entity } from "./entity";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
@@ -58,7 +58,7 @@ export class Bullet extends Entity implements IPooledItem<Bullet>, IProjectile{
 
 
   collision(other: IEntity) {
-    if (IsDamageable(other)){
+    if (IsKillable(other)){
       other.hurt(this.damage, this.shooter, "armour piercing sabot")
     }
     //damage other
@@ -115,6 +115,10 @@ export class Bullet extends Entity implements IPooledItem<Bullet>, IProjectile{
 
 
   get type(): EntityType { return EntityType.bullet }
+  reset(): boolean {
+    this.Free()
+    return false
+  }
 
   Free():void{
     this.CleanUp()

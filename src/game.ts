@@ -24,8 +24,13 @@ import { Bounds } from "./ents/bounds"
 import { CollideCircles, Vec2 } from "planck"
 import { angToVect } from "./helpers/mathutils"
 import { CollisionGroup } from "./enums"
+import { ScoreDisplay } from "./ui/scoredisplay"
 
 export class Game implements IGame{
+
+  static readonly  initialSpawnProbability = 0.995
+  static readonly spawnProbabilityRate:number = 0.000005
+
 
   readonly canvas: HTMLElement
   engine: Engine
@@ -45,7 +50,13 @@ export class Game implements IGame{
   bulletPool: BulletPool
   antPool: AntPool
 
-  protected spawnProbability:number = 0.995
+  protected spawnProbability:number = Game.initialSpawnProbability
+
+  resetGame: boolean
+  scoreDisplay: ScoreDisplay
+  gameActive: boolean
+  score: number = 0
+  gameTime: number = 0
 
 
   constructor(canvasId:string){
@@ -75,6 +86,22 @@ export class Game implements IGame{
     assetMan.onFinish = ()=>{ 
       this.initScene()
     }
+  }
+  addScore(points: number) {
+    
+    this.score+=points
+    this.scoreDisplay.setScore(this.score)
+
+  }
+  gameOver() {
+    this.gameActive = false
+    this.spawnProbability =  100000
+
+
+  }
+
+  reset(): void {
+    this.resetGame = true
   }
 
 
@@ -108,8 +135,12 @@ export class Game implements IGame{
     return bullet
   }
 
+
   
   initScene():void {
+
+    this.scoreDisplay = new ScoreDisplay()
+
 
     this.container.moveAllFromScene()
     this.camera = new TargetCamera("Camera1", new Vector3(0,0,100), this.scene, true)
@@ -137,28 +168,56 @@ export class Game implements IGame{
     //this.camera.lockedTarget = this.player
     
     this.addEnt(this.player)
-
     this.addEnt(new Bounds(this, {x:8,y:7}, CollisionGroup.player))
     this.addEnt(new Bounds(this, {x:20,y:20}, CollisionGroup.projectile))
 
+    const ant = this.spawnAnt()
+    ant.init(angToVect(Math.random() * 2 * Math.PI,4), this.player, 30)
+
+
+    this.gameActive = true
     //paint our first frame!
     this.doFrame()
   }
 
+  doReset(){
+    let ent:IEntity  
+    while(ent = this.ents.pop()){
+      if (ent.reset()){
+        //moce ents to scratch if they persist
+        this.scratch.push(ent)
+      }
+    }
+    this.ents.swap(this.scratch)
+    this.spawnProbability = Game.initialSpawnProbability 
+    this.gameActive = true
+    this.score = 0
+    this.gameTime = 0
+    this.scoreDisplay.setScore(0)
+    this.scoreDisplay.setTime(0)
+
+  }
 
   protected doFrame():void{
 
+    if (this.resetGame){
+      this.resetGame = false
+      this.doReset()
+    }
+
     //queue up next frame
     this.reqAnimFrame = window.requestAnimationFrame(()=>{this.doFrame()})
-      
-
+    
     //render the last prepped frame
     this.engine.beginFrame()
     this.scene.render()
     this.engine.endFrame()
 
-
     //get time and last time..
+    if (this.gameActive){    
+      this.scoreDisplay.setTime(this.gameTime)    
+    }
+
     const  time:number = performance.now()
     const dt = time - this.lastFrame
     this.lastFrame = time
@@ -172,13 +231,13 @@ export class Game implements IGame{
 
     while(this.tickTime < time){
 
-
-      this.spawnProbability -= 0.000002
+      this.spawnProbability -= Game.spawnProbabilityRate
       //do we spawn a new ant?
       if (Math.random() > this.spawnProbability){
         const ant = this.spawnAnt()
         ant.init(angToVect(Math.random() * 2 * Math.PI, 15), this.player, 30)
       }
+ 
 
       let ent:IEntity  
       //pre-phys all our ents
@@ -191,8 +250,17 @@ export class Game implements IGame{
       //swap scratch for main ent list...
       this.ents.swap(this.scratch)
       //physics step
-      this.world.step(Constants.TickLength )
+
+      if (this.gameActive){
+        
+        
+        this.world.step(Constants.TickLength )
+      }
       this.tickTime+= (Constants.TickLength * 1000)
+      
+      this.gameTime += Constants.TickLength
+
+
     }
 
     this.ents.forEach((ent:IEntity)=>ent.preDraw(dt)) 

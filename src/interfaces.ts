@@ -15,23 +15,27 @@ export interface IV3{
 }
 
 export interface IGame{
+  addScore(points: any)
+  gameOver()
+  reset():void
   scene:Scene
   world:planck.World
   rootNode:TransformNode
   spawnBullet():IProjectile
 }
 
-
-export interface IDamageable extends IEntity{
+export interface IKillable extends IEntity{
+  alive:boolean
   hurt(energy:number, other:IEntity, type:string)
 }
 
 
-export function IsDamageable(ent:IEntity):ent is IDamageable{
-  return (ent as IDamageable).hurt !== undefined
+export function IsKillable(ent:IEntity):ent is IKillable{
+  return (ent as IKillable).hurt !== undefined
 }
 
 export interface IEntity{
+  reset(): boolean
   collision(other:IEntity)
   get type(): EntityType
   prePhysics(dT:number):boolean
