@@ -7,7 +7,7 @@ import { Entity } from "./entity";
 export class Bounds extends Entity{
 
 
-public constructor(game:IGame, readonly size:IV2){
+public constructor(game:IGame, readonly size:IV2, mask:CollisionGroup){
   super(game, {x:0, y:0})
 
   //cant access this.size in createBody so do this here... sigh
@@ -16,7 +16,7 @@ public constructor(game:IGame, readonly size:IV2){
   playerFix.setFilterData({ 
     groupIndex: 0, 
     categoryBits:CollisionGroup.boundary,
-    maskBits: CollisionGroup.all 
+    maskBits: mask 
   })
 
 }

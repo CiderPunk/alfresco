@@ -21,8 +21,9 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { TargetCamera } from "@babylonjs/core/Cameras/targetCamera"
 import { Camera } from "@babylonjs/core/Cameras/camera"
 import { Bounds } from "./ents/bounds"
-import { Vec2 } from "planck"
+import { CollideCircles, Vec2 } from "planck"
 import { angToVect } from "./helpers/mathutils"
+import { CollisionGroup } from "./enums"
 
 export class Game implements IGame{
 
@@ -43,6 +44,9 @@ export class Game implements IGame{
   protected tickTime: number
   bulletPool: BulletPool
   antPool: AntPool
+
+  protected spawnProbability:number = 0.995
+
 
   constructor(canvasId:string){
     this.canvas = document.getElementById(canvasId)
@@ -134,10 +138,8 @@ export class Game implements IGame{
     
     this.addEnt(this.player)
 
-    this.addEnt(new Bounds(this, {x:8,y:7}))
-
-
-
+    this.addEnt(new Bounds(this, {x:8,y:7}, CollisionGroup.player))
+    this.addEnt(new Bounds(this, {x:20,y:20}, CollisionGroup.projectile))
 
     //paint our first frame!
     this.doFrame()
@@ -145,7 +147,6 @@ export class Game implements IGame{
 
 
   protected doFrame():void{
-
 
     //queue up next frame
     this.reqAnimFrame = window.requestAnimationFrame(()=>{this.doFrame()})
@@ -171,13 +172,13 @@ export class Game implements IGame{
 
     while(this.tickTime < time){
 
+
+      this.spawnProbability -= 0.000002
       //do we spawn a new ant?
-      if (Math.random() > 0.992){
+      if (Math.random() > this.spawnProbability){
         const ant = this.spawnAnt()
-        ant.init(angToVect(Math.random() * 2 * Math.PI, 10), this.player, 30)
+        ant.init(angToVect(Math.random() * 2 * Math.PI, 15), this.player, 30)
       }
-
-
 
       let ent:IEntity  
       //pre-phys all our ents

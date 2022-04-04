@@ -61,6 +61,8 @@ export class Ant extends Killable implements IPooledItem<Ant>, IDamageable{
     this.pool.Release(this)
   }
   CleanUp():void{
+    this.walkAnim.stop()
+    this.biteAnim.stop()
     this.mesh.setEnabled(false)
     this.body.setActive(false)
   }
@@ -82,10 +84,19 @@ export class Ant extends Killable implements IPooledItem<Ant>, IDamageable{
 
   prePhysics(dT: number): boolean {
     this.diff.set(this.target.getPosition().x, this.target.getPosition().y).sub(this.body.getPosition())
+    if (this.diff.lengthSquared() < 2){
+      console.log("bite!")
+      this.biteAnim.start()
+    }
+
+
+
     this.diff.normalize()
     this.diff.mul(20)
     this.body.applyForceToCenter(this.diff)
     
+
+
     if (! this.alive){
       this.mesh.setEnabled(false)
       this.Free()
@@ -95,8 +106,6 @@ export class Ant extends Killable implements IPooledItem<Ant>, IDamageable{
     return true
   }
   preDraw(dt: number): void {
-
-
 
     //lower position 
     this.mesh.position.set(this.getPosition().x,1, this.getPosition().y)
