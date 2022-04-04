@@ -25,6 +25,7 @@ import { CollideCircles, Vec2 } from "planck"
 import { angToVect } from "./helpers/mathutils"
 import { CollisionGroup } from "./enums"
 import { ScoreDisplay } from "./ui/scoredisplay"
+import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 
 export class Game implements IGame{
 
@@ -57,6 +58,7 @@ export class Game implements IGame{
   gameActive: boolean
   score: number = 0
   gameTime: number = 0
+  picnicMesh: AbstractMesh
 
 
   constructor(canvasId:string){
@@ -151,7 +153,6 @@ export class Game implements IGame{
    
     this.camera.setTarget(new Vector3(0,0,0))
 
-
     const ground = Mesh.CreateGround("ground",50,50,2,this.scene,false)
     const groundMat =  new StandardMaterial("ground_mat", this.scene) 
     groundMat.emissiveColor.set(0.2,0.5,0.3)
@@ -173,6 +174,14 @@ export class Game implements IGame{
 
     const ant = this.spawnAnt()
     ant.init(angToVect(Math.random() * 2 * Math.PI,4), this.player, 30)
+
+
+    const picnic =    this.picnicMesh.clone("picnic", this.rootNode, false)
+    picnic.scaling.scaleInPlace(1.5)
+    picnic.rotationQuaternion = null
+    picnic.rotation.set(0,0.45,0)
+    picnic.position.y-=0.1
+
 
 
     this.gameActive = true
@@ -272,6 +281,13 @@ export class Game implements IGame{
   private loadAssets(assMan:AssetsManager){
    Player.LoadAssets(assMan)
    Ant.LoadAssets(assMan)
+
+
+   const task =assMan.addMeshTask("picnic", "", "assets/","picnic.gltf")
+   task.onSuccess = (task)=>{
+     this.picnicMesh = task.loadedMeshes[0]
+
+   }
   }
 
 
