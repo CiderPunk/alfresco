@@ -11,6 +11,7 @@
   "license": "ISC",
   "devDependencies": {
     "@babylonjs/core": "^4.2.1",
+    "@babylonjs/inspector": "^5.1.0",
     "@babylonjs/loaders": "^4.2.1",
     "planck": "^1.0.0-alpha.4",
     "ts-loader": "^9.2.8",

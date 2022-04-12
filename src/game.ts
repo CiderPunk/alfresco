@@ -2,6 +2,10 @@ import "@babylonjs/core/Loading/loadingScreen"
 import "@babylonjs/loaders/glTF"
 import "@babylonjs/core/Meshes/meshBuilder"
 
+import "@babylonjs/core/Debug/debugLayer"; // Augments the scene with the debug methods
+import "@babylonjs/inspector"; // Injects a local ES6 version of the inspector to prevent automatically relying on the none compatible version
+
+
 import { AssetContainer } from "@babylonjs/core/assetContainer"
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -26,6 +30,7 @@ import { angToVect } from "./helpers/mathutils"
 import { CollisionGroup } from "./enums"
 import { ScoreDisplay } from "./ui/scoredisplay"
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
+import { Wasp, WaspPool } from "./ents/wasp"
 
 export class Game implements IGame{
 
@@ -50,7 +55,7 @@ export class Game implements IGame{
   protected tickTime: number
   bulletPool: BulletPool
   antPool: AntPool
-
+  waspPool: WaspPool
   protected spawnProbability:number = Game.initialSpawnProbability
 
   resetGame: boolean
@@ -87,6 +92,19 @@ export class Game implements IGame{
 
     assetMan.onFinish = ()=>{ 
       this.initScene()
+    }
+
+
+    document.addEventListener("keydown", (e:KeyboardEvent) =>{ this.keyDownHandler(e) }, false);
+  }
+  keyDownHandler(e: KeyboardEvent) {
+    console.log(e.key)
+    switch (e.key){
+      case "F2":
+        console.log("debug layer")
+        this.scene.debugLayer.show()
+        break
+
     }
   }
   addScore(points: number) {
@@ -131,6 +149,13 @@ export class Game implements IGame{
     return ant
   }
 
+  public spawnWasp():Wasp {
+    const wasp = this.waspPool.GetNew()
+    this.ents.push(wasp)
+    return wasp
+  }
+
+
   public spawnBullet():Bullet {
     const bullet = this.bulletPool.GetNew()
     this.ents.push(bullet)
@@ -149,7 +174,9 @@ export class Game implements IGame{
 
     
     this.camera.position.set(0,70,70 )
+    //this.camera.position.set(0,20,20 )
     this.camera.fov = 0.11
+    
    
     this.camera.setTarget(new Vector3(0,0,0))
 
@@ -163,6 +190,7 @@ export class Game implements IGame{
 
     this.bulletPool = new BulletPool(this)
     this.antPool = new AntPool(this)
+    this.waspPool = new WaspPool(this)
 
     this.player = new Player(this, new Vector3(0,0,0))
     
@@ -173,6 +201,11 @@ export class Game implements IGame{
     this.addEnt(new Bounds(this, {x:20,y:20}, CollisionGroup.projectile))
 
     
+
+
+    const wasp = this.spawnWasp()
+    wasp.init({x:5, y:0}, this.player, 100)
+
 
     const picnic =    this.picnicMesh.clone("picnic", this.rootNode, false)
     picnic.scaling.scaleInPlace(1.5)
@@ -240,11 +273,14 @@ export class Game implements IGame{
 
       this.spawnProbability -= Game.spawnProbabilityRate
       //do we spawn a new ant?
+
+
+      /*
       if (Math.random() > this.spawnProbability){
         const ant = this.spawnAnt()
         ant.init(angToVect(Math.random() * 2 * Math.PI, 15), this.player, 30)
       }
- 
+ */
 
       let ent:IEntity  
       //pre-phys all our ents
@@ -279,6 +315,7 @@ export class Game implements IGame{
   private loadAssets(assMan:AssetsManager){
    Player.LoadAssets(assMan)
    Ant.LoadAssets(assMan)
+   Wasp.LoadAssets(assMan)
 
 
    const task =assMan.addMeshTask("picnic", "", "assets/","picnic.gltf")
