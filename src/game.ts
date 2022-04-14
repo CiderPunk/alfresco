@@ -207,6 +207,10 @@ export class Game implements IGame{
     wasp.init({x:5, y:0}, this.player, 100)
 
 
+    const wasp2= this.spawnWasp()
+    wasp2.init({x:-5, y:0}, this.player, 100)   
+
+
     const picnic =    this.picnicMesh.clone("picnic", this.rootNode, false)
     picnic.scaling.scaleInPlace(1.5)
     picnic.rotationQuaternion = null
@@ -315,7 +319,7 @@ export class Game implements IGame{
   private loadAssets(assMan:AssetsManager){
    Player.LoadAssets(assMan)
    Ant.LoadAssets(assMan)
-   Wasp.LoadAssets(assMan)
+   Wasp.LoadAssets(assMan, this.scene)
 
 
    const task =assMan.addMeshTask("picnic", "", "assets/","picnic.gltf")
