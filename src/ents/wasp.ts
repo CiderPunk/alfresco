@@ -8,7 +8,7 @@ import { Scene } from "@babylonjs/core/scene";
 import { Vec2, World } from "planck";
 import planck = require("planck");
 import { CollisionGroup, EntityType } from "../enums";
-import { vectToAngle } from "../helpers/mathutils";
+import { lerpLimit, vectToAngle, vectToAngleInv } from "../helpers/mathutils";
 import { cloneAnim } from "../helpers/meshhelpers";
 import { Pool, PooledItem } from "../helpers/pool";
 import { IV2, IEntity, IPooledItem, IGame,  IKillable } from "../interfaces";
@@ -32,49 +32,50 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
   static waspMeshNode: AbstractMesh;
   static animations: Map<string, AnimationGroup>
   mesh: AbstractMesh
+
   flyAnim: AnimationGroup
   idleAnim: AnimationGroup
   stingAnim: AnimationGroup
+  
   static pos = new Vec2()
+  
   target:IKillable
   diff: Vec2 = new Vec2()
-  biteTime: number = 0
-  biteCooldown: number = 0
-
-
-
+  stingTime: number = 0
+  stingCooldown: number = 0
 
 
   public constructor(name:string, game:IGame, private pool:WaspPool){
     super(game, {x:0, y:0},0,Wasp.initHealth)
      //pooled entities gotta start innactive
     this.body.setActive(false)
-
     const newNodes = Wasp.container.instantiateModelsToScene(sn=>(name+"_"+sn), false)  
-
     this.mesh = newNodes.rootNodes[0] as AbstractMesh
-    this.flyAnim = newNodes.animationGroups.find(g=>g.name="fly")
-    this.idleAnim = newNodes.animationGroups.find(g=>g.name="idle")
-    this.stingAnim = newNodes.animationGroups.find(g=>g.name="stinga")
 
-    //this.mesh = Wasp.waspMeshNode.clone(name + '_mesh', game.rootNode, false)
-    //this.mesh.skeleton = Wasp.waspMeshNode.skeleton
-    //this.mesh.rotationQuaternion = null
+    this.flyAnim = newNodes.animationGroups[0]
+    this.idleAnim = newNodes.animationGroups[1]
+    this.stingAnim = newNodes.animationGroups[2]
 
-    //this.flyAnim = cloneAnim(Wasp.animations.get("fly"), name+"_anim_fly", this.mesh)
-    //this.idleAnim = cloneAnim(Wasp.animations.get("idle"), name+"_anim_idle", this.mesh)
-    //this.stingAnim = cloneAnim(Wasp.animations.get("sting"), name+"_anim_sting", this.mesh)
     this.mesh.setEnabled(false)    
   }
 
   public init(position:IV2, target:IKillable, health:number){
     this.health = health
     this.target = target
+    Wasp.pos.set(position.x, position.y)
+
+
     this.body.setPosition(Wasp.pos.set(position.x, position.y))
     this.body.setActive(true)
+
+    //angle to target
+    this.diff.set(this.target.getPosition().x, this.target.getPosition().y).sub(this.body.getPosition())
+    this.body.setAngle(vectToAngleInv(this.diff) +(Math.PI * 0.5))
+
     this.mesh.setEnabled(true)
     this.flyAnim.start(true)
     this.idleAnim.start(true)
+    //this.stingAnim.start(true)
 
 
 //his.stingAnim.start(true)
@@ -97,14 +98,14 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
     this.stingAnim.stop()
     this.mesh.setEnabled(false)
     this.body.setActive(false)
-    this.biteCooldown = 0
-    this.biteTime = 0
+    this.stingCooldown = 0
+    this.stingTime = 0
   }
 
   createBody(world: World, position: IV2, orientation: number) {
     const body = world.createBody({type: planck.Body.DYNAMIC,position: new planck.Vec2(position), angle: orientation, angularDamping:2})
-    const shape = new planck.Circle(0.7)
-    const fix = body.createFixture({shape: shape, restitution:0.1, density:0.5})
+    const shape = new planck.Circle(0.4)
+    const fix = body.createFixture({shape: shape, restitution:0.1, density:1})
 
     fix.setFilterData({groupIndex: 1, categoryBits:CollisionGroup.enemy, maskBits:CollisionGroup.player|CollisionGroup.projectile})
     body.setSleepingAllowed(false)
@@ -119,33 +120,39 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
   prePhysics(dT: number): boolean {
 
     if (this.target.alive){
+      
       this.diff.set(this.target.getPosition().x, this.target.getPosition().y).sub(this.body.getPosition())
-      if (this.biteCooldown > 0){
-        this.biteCooldown -= dT
+      const angleToTarget = vectToAngleInv(this.diff) +(Math.PI * 0.5)
+      let angleDiff = angleToTarget - this.body.getAngle()
+      angleDiff += angleDiff > Math.PI ? -Math.PI : angleDiff < -Math.PI ? Math.PI : 0
+      
+      this.body.applyTorque(angleDiff)
+      //this.body.
+   
+
+
+      if (this.stingCooldown > 0){
+        this.stingCooldown -= dT
       }
-      if (this.biteTime > 0){
-        this.biteTime -= dT
-        if (this.biteTime < 0){ 
+      if (this.stingTime > 0){
+        this.stingTime -= dT
+        if (this.stingTime < 0){ 
           console.log("sting hit")
-          this.biteTime = 0
+          this.stingTime = 0
           if (this.diff.lengthSquared() < 2){
             this.target.hurt(0, this, "stung")
           }
         }
       }
-      
 
-      if (this.biteCooldown <= 0 && this.diff.lengthSquared() < 2){
-        this.biteTime = 150
-        this.biteCooldown  = 400
+      if (this.stingCooldown <= 0 && this.diff.lengthSquared() < 2){
+        this.stingTime = 150
+        this.stingCooldown  = 400
         console.log("start sting!")
-        this.idleAnim.stop()
         this.stingAnim.start(false)
       }
 
-      this.diff.normalize()
-      this.diff.mul(20)
-      this.body.applyForceToCenter(this.diff)
+   
       
     }
     else{
@@ -170,7 +177,7 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
   preDraw(dt: number): void {
     this.mesh.position.set(this.getPosition().x,1, this.getPosition().y)
     // angle
-    this.mesh.rotation.set(0, (Math.PI / 2) -vectToAngle(  this.diff ), 0 )
+    this.mesh.rotation.set(0, this.body.getAngle(), 0 )
   }
 
   get type(): EntityType {
@@ -184,17 +191,14 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
 
 
   static LoadAssets(assMan:AssetsManager, scene:Scene){
+    //const task = assMan.addMeshTask("mesh", null, "https://raw.githubusercontent.com/CiderPunk/alfresco/main/dist/assets/", "wasp.gltf")
+      
     const task = assMan.addMeshTask("loadant","","assets/", "wasp.gltf")
     task.onSuccess = (task)=>{ 
-      const waspMesh = task.loadedMeshes[0].getChildTransformNodes()[0]
-      //Wasp.waspMeshNode = root.getChildMeshes(true,n=>n.id == "wasp")[0] as AbstractMesh
-      //Wasp.animations = new Map<string,AnimationGroup>()
-      //const waspMesh = root.getChildTransformNodes[0] as AbstractMesh
       Wasp.container = new AssetContainer(scene)
-  
-      Wasp.container.meshes.push(task.loadedMeshes[0])
-      Wasp.container.skeletons.push(task.loadedSkeletons[0])
-      task.loadedAnimationGroups.forEach(a=>{ Wasp.container.animationGroups.push(a)})
+      Wasp.container.meshes.push(...task.loadedMeshes)
+      Wasp.container.skeletons.push(...task.loadedSkeletons)
+      Wasp.container.animationGroups.push(...task.loadedAnimationGroups)
     }
   } 
 

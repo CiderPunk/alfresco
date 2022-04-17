@@ -4,7 +4,7 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { AssetsManager } from "@babylonjs/core/Misc/assetsManager"
 import { LocalControl } from "../controls/localcontrol"
 import { IController,  IEntity, IGame, IKillable, IShooter, IV2, IWeapon } from "../interfaces"
-import { vectToAngle } from "../helpers/mathutils"
+import { vectToAngle, vectToAngleInv } from "../helpers/mathutils"
 import { cloneAnim } from "../helpers/meshhelpers"
 import { ShotGun } from "../weapons/shotgun"
 import { CollisionGroup, EntityType } from "../enums"
@@ -177,13 +177,13 @@ export class Player extends Killable implements IShooter,  IKillable{
     if (vel.lengthSquared() >0.1){
       this.walkAnim.start(true, 3)
       //turn lower in direction of motion
-      const lowerAngle = vectToAngle(vel)
+      const lowerAngle = vectToAngleInv(vel)
       this.lower.rotation.set(0,lowerAngle  + (Math.PI / 2),0)
     }
     else{
       if (this.walkAnim.isPlaying){
         this.walkAnim.stop()
-        this.standAnim.start()
+        this.standAnim.start(true)
       }
     }
 

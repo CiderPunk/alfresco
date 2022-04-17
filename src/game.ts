@@ -168,11 +168,8 @@ export class Game implements IGame{
 
     this.scoreDisplay = new ScoreDisplay()
 
-
     this.container.moveAllFromScene()
-    this.camera = new TargetCamera("Camera1", new Vector3(0,0,100), this.scene, true)
-
-    
+    this.camera = new TargetCamera("Camera1", new Vector3(0,0,100), this.scene, true)    
     this.camera.position.set(0,70,70 )
     //this.camera.position.set(0,20,20 )
     this.camera.fov = 0.11
@@ -208,7 +205,7 @@ export class Game implements IGame{
 
 
     const wasp2= this.spawnWasp()
-    wasp2.init({x:-5, y:0}, this.player, 100)   
+    wasp2.init({x:-0, y:5}, this.player, 100)   
 
 
     const picnic =    this.picnicMesh.clone("picnic", this.rootNode, false)

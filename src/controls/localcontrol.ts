@@ -36,10 +36,7 @@ export class LocalControl implements IController{
 
   update():void {
     this.joyAim.copyFrom(this.player.getScreenPosition().subtract(this.mousePos).normalize())
-
-
-//    this.joyAim.set( playerPos.x- e.clientX, playerPos.y - e.clientY).normalize()
- this.joyAim.x = -this.joyAim.x
+    this.joyAim.x = -this.joyAim.x
   }
 
   mouseHandler(e: MouseEvent) {
@@ -59,19 +56,19 @@ export class LocalControl implements IController{
     switch (key){
       case "KeyD":
         this.keydir.x+=1
-        console.log("move right")
+   //     console.log("move right")
         break;
       case "KeyA":
         this.keydir.x-=1
-        console.log("move left")
+    //    console.log("move left")
         break;
       case "KeyS":
         this.keydir.y+=1
-        console.log("move down")
+    //    console.log("move down")
         break;
       case "KeyW":
         this.keydir.y-=1
-        console.log("move up")
+    //    console.log("move up")
         break;
     }
     this.joySteer.set(this.keydir.x, this.keydir.y).normalize()
