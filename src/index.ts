@@ -1,10 +1,7 @@
-
-
-
-
 import { Game } from "./game";
 
-
 window.addEventListener('DOMContentLoaded', function() {
-  const game = new Game("game");
+  //make our game
+  const game = new Game("game")
+  
 })

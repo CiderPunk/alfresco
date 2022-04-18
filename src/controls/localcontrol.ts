@@ -1,6 +1,6 @@
 import { Vector2 } from "@babylonjs/core/Maths/math.vector";
 import { Player } from "../ents/player";
-import { IController, IV2 } from "../interfaces";
+import { IController } from "../interfaces";
 
 export class LocalControl implements IController{
  

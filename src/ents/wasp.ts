@@ -1,18 +1,15 @@
 import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup";
 import { AssetContainer } from "@babylonjs/core/assetContainer";
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
-import { Mesh } from "@babylonjs/core/Meshes/mesh";
-import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { AssetsManager } from "@babylonjs/core/Misc/assetsManager";
 import { Scene } from "@babylonjs/core/scene";
 import { Vec2, World } from "planck";
 import planck = require("planck");
 import { CollisionGroup, EntityType } from "../enums";
-import { lerpLimit, vectToAngle, vectToAngleInv } from "../helpers/mathutils";
-import { cloneAnim } from "../helpers/meshhelpers";
-import { Pool, PooledItem } from "../helpers/pool";
+import { angToVect2, vectToAngleInv } from "../helpers/mathutils";
+import { Pool } from "../helpers/pool";
 import { IV2, IEntity, IPooledItem, IGame,  IKillable } from "../interfaces";
-import { Entity } from "./entity";
+
 import { Killable } from "./killable";
 
 export class WaspPool extends Pool<Wasp>{
@@ -23,10 +20,18 @@ export class WaspPool extends Pool<Wasp>{
 
 export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
 
+
+  static readonly onTargetAngle = 0.5
+  static readonly onTargetForce = 15
+  static readonly offTargetForce = 5
+  static readonly fastTurnRate = 0.1
+  static readonly slowFurnForce = 0.4
+  static readonly linearDamping = 4
+  
+
+
   static readonly initHealth =40
   static readonly points = 200
-
-
   static container:AssetContainer
 
   static waspMeshNode: AbstractMesh;
@@ -41,9 +46,9 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
   
   target:IKillable
   diff: Vec2 = new Vec2()
-  stingTime: number = 0
-  stingCooldown: number = 0
-
+  stingTime = 0
+  stingCooldown = 0
+  force:Vec2 = new Vec2()
 
   public constructor(name:string, game:IGame, private pool:WaspPool){
     super(game, {x:0, y:0},0,Wasp.initHealth)
@@ -73,7 +78,7 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
     this.body.setAngle(vectToAngleInv(this.diff) +(Math.PI * 0.5))
 
     this.mesh.setEnabled(true)
-    this.flyAnim.start(true)
+    this.flyAnim.start(true,1.5)
     this.idleAnim.start(true)
     //this.stingAnim.start(true)
 
@@ -107,29 +112,36 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
     const shape = new planck.Circle(0.4)
     const fix = body.createFixture({shape: shape, restitution:0.1, density:1})
 
-    fix.setFilterData({groupIndex: 1, categoryBits:CollisionGroup.enemy, maskBits:CollisionGroup.player|CollisionGroup.projectile})
+    fix.setFilterData({groupIndex: 2, categoryBits:CollisionGroup.flyers, maskBits:CollisionGroup.player|CollisionGroup.projectile})
     body.setSleepingAllowed(false)
-    body.setLinearDamping(10)
+    body.setLinearDamping(Wasp.linearDamping)
     return body
   }
 
   collision(other: IEntity) {
-
+    //do nothing
   }
 
-  prePhysics(dT: number): boolean {
 
+
+  
+
+  prePhysics(dT: number): boolean {
     if (this.target.alive){
-      
       this.diff.set(this.target.getPosition().x, this.target.getPosition().y).sub(this.body.getPosition())
       const angleToTarget = vectToAngleInv(this.diff) +(Math.PI * 0.5)
-      let angleDiff = angleToTarget - this.body.getAngle()
-      angleDiff += angleDiff > Math.PI ? -Math.PI : angleDiff < -Math.PI ? Math.PI : 0
+      const facing = this.body.getAngle()
+      const vel = this.body.getLinearVelocity()
+      const speed = vel.lengthSquared()
       
-      this.body.applyTorque(angleDiff)
-      //this.body.
-   
-
+      let angleDiff = angleToTarget - facing
+      angleDiff += angleDiff > Math.PI ? -(2 * Math.PI) : angleDiff < -Math.PI ? (2*Math.PI) : 0
+ 
+      const acc = Math.abs(angleDiff) > Wasp.onTargetAngle ? Wasp.offTargetForce : Wasp.onTargetForce
+      const turn = speed > 10 ?  Wasp.fastTurnRate : Wasp.slowFurnForce 
+    
+      this.body.applyTorque( angleDiff > 0 ? turn : -turn)
+      this.body.applyForceToCenter(angToVect2(facing, acc, this.force) as Vec2)
 
       if (this.stingCooldown > 0){
         this.stingCooldown -= dT
@@ -140,7 +152,7 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
           console.log("sting hit")
           this.stingTime = 0
           if (this.diff.lengthSquared() < 2){
-            this.target.hurt(0, this, "stung")
+            this.target.hurt(20, this, "stung")
           }
         }
       }

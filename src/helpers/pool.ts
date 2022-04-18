@@ -1,9 +1,9 @@
-import { IGame, IPool, IPooledItem } from "../interfaces"
+import { IGame, IPool, IPooledItem, IPoolItemOptions } from "../interfaces"
 import { FastArray } from "./fastarray"
 
 
-export abstract class PooledItem{
-  pool:IPool = null
+export abstract class PooledItem<T>{
+  pool:IPool<T> = null
   
   CleanUp:()=>void
 
@@ -13,14 +13,16 @@ export abstract class PooledItem{
   }
 }
 
-export class Pool<T extends IPooledItem<T>> implements IPool{
+
+
+export class Pool<T extends IPooledItem<T>> implements IPool<T>{
   protected pool:FastArray<T>
   protected count = 1
-  protected readonly options:any
+  protected readonly options:IPoolItemOptions
 
   constructor( protected game:IGame, protected namePrefix:string,
-    protected getNewItem:(name:string, game:IGame, pool:IPool, options:any)=>T, 
-    protected customOptions:any = null, defaultOptions:any = null){
+    protected getNewItem:(name:string, game:IGame, pool:IPool<T>, options:IPoolItemOptions)=>T, 
+    protected customOptions:IPoolItemOptions = null, defaultOptions:IPoolItemOptions = null){
     this.options = { ...defaultOptions, ...customOptions}
     this.pool = new FastArray<T>();
   }
@@ -40,7 +42,7 @@ export class Pool<T extends IPooledItem<T>> implements IPool{
 
 
   public BulkPopulate(count:number){
-    var preloadOpts = { preload:true, ...this.options} 
+    const preloadOpts = { preload:true, ...this.options} 
     for (let i = 0; i < count; i++){
       const item = this.getNewItem(this.namePrefix+(this.count++), this.game, this, preloadOpts)
       this.Release(item)

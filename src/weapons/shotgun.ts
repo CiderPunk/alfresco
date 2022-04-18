@@ -1,7 +1,6 @@
-import { Vec2 } from "planck";
-import { angToVect } from "../helpers/mathutils";
-import { IGame, IShooter } from "../interfaces";
-import { Weapon } from "./weapon";
+import { angToVect } from "../helpers/mathutils"
+import { IGame, IShooter } from "../interfaces"
+import { Weapon } from "./weapon"
 
 export class ShotGun extends Weapon{
 
@@ -28,7 +27,7 @@ export class ShotGun extends Weapon{
     for (let i = 0;  i < this.shotCount; i++){
     const bullet = this.game.spawnBullet()
 
-      const v = new Vec2()
+      //const v = new Vec2()
       //const vec = new Vec2(shooter.direction.x, shooter.direction.y).mul(20)  
 
 

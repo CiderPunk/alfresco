@@ -5,7 +5,7 @@ import { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { CollisionGroup, EntityType } from "../enums";
 import { Pool } from "../helpers/pool";
-import { IEntity, IGame, IPool, IPooledItem, IProjectile,  IShooter, IsKillable, IV2 } from "../interfaces";
+import { IEntity, IGame, IPooledItem, IProjectile,  IShooter, IsKillable, IV2 } from "../interfaces";
 import { Entity } from "./entity";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
@@ -49,7 +49,7 @@ export class Bullet extends Entity implements IPooledItem<Bullet>, IProjectile{
   }
 
 
-  createBody(world: World, position: IV2, orientation: number) {
+  createBody(world: World, position?: IV2, orientation?: number) {
     const body = world.createBody({  type: planck.Body.DYNAMIC })
     body.setBullet(true)
     body.setUserData(this)

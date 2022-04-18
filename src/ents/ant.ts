@@ -6,9 +6,8 @@ import planck = require("planck");
 import { CollisionGroup, EntityType } from "../enums";
 import { vectToAngle } from "../helpers/mathutils";
 import { cloneAnim } from "../helpers/meshhelpers";
-import { Pool, PooledItem } from "../helpers/pool";
+import { Pool } from "../helpers/pool";
 import { IV2, IEntity, IPooledItem, IGame,  IKillable } from "../interfaces";
-import { Entity } from "./entity";
 import { Killable } from "./killable";
 
 export class AntPool extends Pool<Ant>{
@@ -31,8 +30,8 @@ export class Ant extends Killable implements IPooledItem<Ant>, IKillable{
   static pos = new Vec2()
   target:IKillable
   diff: Vec2 = new Vec2()
-  biteTime: number = 0
-  biteCooldown: number = 0
+  biteTime = 0
+  biteCooldown = 0
 
   public constructor(name:string, game:IGame, private pool:AntPool){
     super(game, {x:0, y:0},0,Ant.antHealth)
@@ -81,14 +80,15 @@ export class Ant extends Killable implements IPooledItem<Ant>, IKillable{
     const shape = new planck.Circle(0.7)
     const fix = body.createFixture({shape: shape, restitution:0.1, density:0.5})
 
-    fix.setFilterData({groupIndex: 1, categoryBits:CollisionGroup.enemy, maskBits:CollisionGroup.player|CollisionGroup.projectile})
+    fix.setFilterData({groupIndex: 1, categoryBits:CollisionGroup.walkers, maskBits:CollisionGroup.player|CollisionGroup.projectile})
     body.setSleepingAllowed(false)
     body.setLinearDamping(10)
     return body
   }
 
-  collision(other: IEntity) {
 
+  collision( other:IEntity) {  
+    //do nothing
   }
 
   prePhysics(dT: number): boolean {
@@ -140,8 +140,6 @@ export class Ant extends Killable implements IPooledItem<Ant>, IKillable{
     this.game.addScore(Ant.points)
   }
   
-
-
 
   preDraw(dt: number): void {
     this.mesh.position.set(this.getPosition().x,0.5, this.getPosition().y)

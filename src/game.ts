@@ -2,8 +2,8 @@ import "@babylonjs/core/Loading/loadingScreen"
 import "@babylonjs/loaders/glTF"
 import "@babylonjs/core/Meshes/meshBuilder"
 
-import "@babylonjs/core/Debug/debugLayer"; // Augments the scene with the debug methods
-import "@babylonjs/inspector"; // Injects a local ES6 version of the inspector to prevent automatically relying on the none compatible version
+//import "@babylonjs/core/Debug/debugLayer"; // Augments the scene with the debug methods
+//import "@babylonjs/inspector"; // Injects a local ES6 version of the inspector to prevent automatically relying on the none compatible version
 
 
 import { AssetContainer } from "@babylonjs/core/assetContainer"
@@ -12,25 +12,23 @@ import { Scene } from "@babylonjs/core/scene"
 import { AssetsManager } from "@babylonjs/core/Misc/assetsManager"
 import { Player } from "./ents/player"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
-import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { IEntity, IGame, IProjectile } from "./interfaces"
 import { FastArray } from "./helpers/fastarray"
 import * as planck from 'planck';
-import { Constants } from "./constants"
+import * as  Constants from "./constants"
 import { Bullet, BulletPool } from "./ents/bullet"
 import { Ant, AntPool } from "./ents/ant"
 import { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { TargetCamera } from "@babylonjs/core/Cameras/targetCamera"
-import { Camera } from "@babylonjs/core/Cameras/camera"
 import { Bounds } from "./ents/bounds"
-import { CollideCircles, Vec2 } from "planck"
-import { angToVect } from "./helpers/mathutils"
+
 import { CollisionGroup } from "./enums"
 import { ScoreDisplay } from "./ui/scoredisplay"
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import { Wasp, WaspPool } from "./ents/wasp"
+import { angToVect2 } from "./helpers/mathutils";
 
 export class Game implements IGame{
 
@@ -43,7 +41,7 @@ export class Game implements IGame{
   scene: Scene
   container: AssetContainer
   reqAnimFrame: number
-  lastFrame: number = 0
+  lastFrame = 0
   camera: TargetCamera
   public readonly rootNode: TransformNode
   player: Player
@@ -61,8 +59,8 @@ export class Game implements IGame{
   resetGame: boolean
   scoreDisplay: ScoreDisplay
   gameActive: boolean
-  score: number = 0
-  gameTime: number = 0
+  score = 0
+  gameTime = 0
   picnicMesh: AbstractMesh
 
 
@@ -97,12 +95,14 @@ export class Game implements IGame{
 
     document.addEventListener("keydown", (e:KeyboardEvent) =>{ this.keyDownHandler(e) }, false);
   }
+
+
   keyDownHandler(e: KeyboardEvent) {
     console.log(e.key)
     switch (e.key){
       case "F2":
         console.log("debug layer")
-        this.scene.debugLayer.show()
+      //  this.scene.debugLayer.show()
         break
 
     }
@@ -124,15 +124,13 @@ export class Game implements IGame{
     this.resetGame = true
   }
 
-
   public addEnt(ent:IEntity){
     this.ents.push(ent)
   }
 
-
   protected contact(contact: planck.Contact): void {
-    var ent1 = contact.getFixtureA().getBody().getUserData() as IEntity;
-    var ent2 = contact.getFixtureB().getBody().getUserData() as IEntity;
+    const ent1 = contact.getFixtureA().getBody().getUserData() as IEntity;
+    const ent2 = contact.getFixtureB().getBody().getUserData() as IEntity;
 
 //contact.getTangentSpeed()
 
@@ -162,8 +160,6 @@ export class Game implements IGame{
     return bullet
   }
 
-
-  
   initScene():void {
 
     this.scoreDisplay = new ScoreDisplay()
@@ -196,17 +192,6 @@ export class Game implements IGame{
     this.addEnt(this.player)
     this.addEnt(new Bounds(this, {x:8,y:7}, CollisionGroup.player))
     this.addEnt(new Bounds(this, {x:20,y:20}, CollisionGroup.projectile))
-
-    
-
-
-    const wasp = this.spawnWasp()
-    wasp.init({x:5, y:0}, this.player, 100)
-
-
-    const wasp2= this.spawnWasp()
-    wasp2.init({x:-0, y:5}, this.player, 100)   
-
 
     const picnic =    this.picnicMesh.clone("picnic", this.rootNode, false)
     picnic.scaling.scaleInPlace(1.5)
@@ -276,12 +261,18 @@ export class Game implements IGame{
       //do we spawn a new ant?
 
 
-      /*
       if (Math.random() > this.spawnProbability){
-        const ant = this.spawnAnt()
-        ant.init(angToVect(Math.random() * 2 * Math.PI, 15), this.player, 30)
+
+        if (Math.random() > 0.75){
+          const wasp = this.spawnWasp()
+           wasp.init(angToVect2(Math.random() * 2 * Math.PI, 15), this.player, 30)
+        }
+        else{
+          const ant = this.spawnAnt()
+          ant.init(angToVect2(Math.random() * 2 * Math.PI, 15), this.player, 30)
+        }
       }
- */
+
 
       let ent:IEntity  
       //pre-phys all our ents

@@ -8,7 +8,7 @@ export abstract class Entity implements IEntity{
 
   protected readonly body: planck.Body
 
-  constructor(protected readonly game:IGame, position:IV2, orientation:number= 0){
+  constructor(protected readonly game:IGame, position:IV2, orientation= 0){
     this.body = this.createBody(game.world, position, orientation)
     this.body.setUserData(this);
 

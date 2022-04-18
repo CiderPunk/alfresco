@@ -1,6 +1,5 @@
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { Scene } from "@babylonjs/core/scene"
-import { Vec2 } from "planck"
 import { EntityType } from "./enums"
 
 export interface IV2{
@@ -15,7 +14,7 @@ export interface IV3{
 }
 
 export interface IGame{
-  addScore(points: any)
+  addScore(points:number)
   gameOver()
   reset():void
   scene:Scene
@@ -62,15 +61,14 @@ export interface IProjectile extends IEntity{
 
 
 export interface IController{
-  update()
   readonly joySteer:IV2
   readonly joyAim:IV2
   fire1:boolean
   update():void
 }
 
-export interface IPool{
-  Release(item:any):void
+export interface IPool<T>{
+  Release(item:IPooledItem<T>):void
 }
 
 export interface IPooledItem<T>{
@@ -78,3 +76,4 @@ export interface IPooledItem<T>{
   CleanUp:()=>void
 }
 
+export interface IPoolItemOptions{}

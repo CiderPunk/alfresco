@@ -3,7 +3,7 @@ import { Entity } from "./entity";
 
 export abstract class Killable extends Entity implements IKillable{
   
-  alive:boolean = true
+  alive = true
   public constructor(game:IGame, location:IV2, orientation:number, protected health:number){
     super(game, location, orientation)
   }

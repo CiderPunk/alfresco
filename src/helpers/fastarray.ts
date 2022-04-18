@@ -55,7 +55,7 @@ export class FastArray<T> implements Iterable<T>{
 
   private grow(){
     //create a new store
-    let tempStore = new Array<T>(this.store.length + this.growSize)
+    const tempStore = new Array<T>(this.store.length + this.growSize)
     //copy everything from the old store
     for (let i = 0; i < this.store.length; i++){
       tempStore[i] = this.store[i]

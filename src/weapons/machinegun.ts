@@ -1,4 +1,3 @@
-import { Vec2 } from "planck";
 import { angToVect } from "../helpers/mathutils";
 import { IGame, IShooter } from "../interfaces";
 import { Weapon } from "./weapon";

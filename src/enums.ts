@@ -5,8 +5,6 @@ export enum EntityType {
   boundary
 }
 
-
-
 export enum CollisionGroup {
   boundary = 0x0001,
   player = 0x0002,

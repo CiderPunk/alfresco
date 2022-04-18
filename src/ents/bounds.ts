@@ -27,9 +27,13 @@ export class Bounds extends Entity{
   }
 
   reset(): boolean { return true  }
-  collision(other: IEntity) {  }
+  collision(other: IEntity) { 
+    //do nothing
+   }
   prePhysics(dT: number): boolean { return true }
-  preDraw(dt: number): void { }
+  preDraw(dt: number): void {
+    //do nothing 
+  }
   get type(): EntityType { return EntityType.boundary } 
 
 
