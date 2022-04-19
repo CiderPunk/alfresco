@@ -29,21 +29,23 @@ import { ScoreDisplay } from "./ui/scoredisplay"
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import { Wasp, WaspPool } from "./ents/wasp"
 import { angToVect2 } from "./helpers/mathutils";
+import { Attributes, Component, ComponentChild, ComponentChildren, Ref } from "preact"
 
-export class Game implements IGame{
+export class Game extends Component implements IGame{
+
 
   static readonly  initialSpawnProbability = 0.995
   static readonly spawnProbabilityRate:number = 0.000005
 
 
-  readonly canvas: HTMLElement
+  canvas: HTMLCanvasElement
   engine: Engine
   scene: Scene
   container: AssetContainer
   reqAnimFrame: number
   lastFrame = 0
   camera: TargetCamera
-  public readonly rootNode: TransformNode
+  public rootNode: TransformNode
   player: Player
 
 
@@ -64,19 +66,30 @@ export class Game implements IGame{
   picnicMesh: AbstractMesh
 
 
-  constructor(canvasId:string){
-    this.canvas = document.getElementById(canvasId)
-    this.engine = new Engine(this.canvas as HTMLCanvasElement)
+  constructor(){
+    super()
+
+    this.componentDidMount = ()=>{ 
+      this.init()
+    }
+    this.componentWillUnmount= ()=>{
+
+    }
+    this.world = new planck.World()
+    this.world.on("begin-contact",this.contact)
+  }
+
+
+  init() {
+    this.canvas = document.createElement('canvas') as HTMLCanvasElement
+    this.base.appendChild(this.canvas)
+    this.engine = new Engine(this.canvas)
     this.scene = new Scene(this.engine)
     this.scene.useRightHandedSystem = true
     const assetMan = new AssetsManager(this.scene)
     this.container = new AssetContainer(this.scene)
     this.rootNode = new TransformNode("root", this.scene)
-    
     this.tickTime = 0
-    this.world = new planck.World()
-    this.world.on("begin-contact",this.contact)
-
     // The canvas/window resize event handler.
     window.addEventListener("resize", () => {
       this.engine.resize();
@@ -96,7 +109,7 @@ export class Game implements IGame{
 
 
   keyDownHandler(e: KeyboardEvent) {
-    console.log(e.key)
+    //console.log(e.key)
     switch (e.key){
       case "F2":
         console.log("debug layer")
@@ -295,6 +308,12 @@ export class Game implements IGame{
     
   }
 
+
+
+
+  render(): ComponentChild {
+    return (<div className="gameContainer"></div>)
+  }
 
 
   private loadAssets(assMan:AssetsManager){
