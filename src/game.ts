@@ -91,8 +91,6 @@ export class Game implements IGame{
     assetMan.onFinish = ()=>{ 
       this.initScene()
     }
-
-
     document.addEventListener("keydown", (e:KeyboardEvent) =>{ this.keyDownHandler(e) }, false);
   }
 
@@ -108,16 +106,12 @@ export class Game implements IGame{
     }
   }
   addScore(points: number) {
-    
     this.score+=points
     this.scoreDisplay.setScore(this.score)
-
   }
   gameOver() {
     this.gameActive = false
     this.spawnProbability =  100000
-
-
   }
 
   reset(): void {
@@ -169,8 +163,7 @@ export class Game implements IGame{
     this.camera.position.set(0,70,70 )
     //this.camera.position.set(0,20,20 )
     this.camera.fov = 0.11
-    
-   
+  
     this.camera.setTarget(new Vector3(0,0,0))
 
     const ground = Mesh.CreateGround("ground",50,50,2,this.scene,false)
@@ -305,16 +298,14 @@ export class Game implements IGame{
 
 
   private loadAssets(assMan:AssetsManager){
-   Player.LoadAssets(assMan)
-   Ant.LoadAssets(assMan)
-   Wasp.LoadAssets(assMan, this.scene)
+    Player.LoadAssets(assMan)
+    Ant.LoadAssets(assMan, this.scene)
+    Wasp.LoadAssets(assMan, this.scene)
 
-
-   const task =assMan.addMeshTask("picnic", "", "assets/","picnic.gltf")
-   task.onSuccess = (task)=>{
-     this.picnicMesh = task.loadedMeshes[0]
-
-   }
+    const task =assMan.addMeshTask("picnic", "", "assets/","picnic.gltf")
+    task.onSuccess = (task)=>{
+      this.picnicMesh = task.loadedMeshes[0]
+    }
   }
 
 

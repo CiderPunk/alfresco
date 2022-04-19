@@ -1,6 +1,8 @@
 import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup";
+import { AssetContainer } from "@babylonjs/core/assetContainer";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { AssetsManager } from "@babylonjs/core/Misc/assetsManager";
+import { Scene } from "@babylonjs/core/scene";
 import { Vec2, World } from "planck";
 import planck = require("planck");
 import { CollisionGroup, EntityType } from "../enums";
@@ -21,8 +23,8 @@ export class Ant extends Killable implements IPooledItem<Ant>, IKillable{
   static readonly antHealth =40
   static readonly points = 100
 
-  static antMeshNode: TransformNode;
-  static animations: Map<string, AnimationGroup>
+  //static antMeshNode: TransformNode;
+  //static animations: Map<string, AnimationGroup>
   mesh: TransformNode
   walkAnim: AnimationGroup
   idleAnim: AnimationGroup
@@ -32,16 +34,25 @@ export class Ant extends Killable implements IPooledItem<Ant>, IKillable{
   diff: Vec2 = new Vec2()
   biteTime = 0
   biteCooldown = 0
+  static container: AssetContainer;
 
   public constructor(name:string, game:IGame, private pool:AntPool){
     super(game, {x:0, y:0},0,Ant.antHealth)
      //pooled entities gotta start innactive
     this.body.setActive(false)
-    this.mesh = Ant.antMeshNode.clone(name + '_mesh', game.rootNode, false)
+    const newNodes = Ant.container.instantiateModelsToScene(sn=>(name + '_'+ sn), false)
+
+    this.mesh = newNodes.rootNodes[0]
     this.mesh.rotationQuaternion = null
-    this.walkAnim = cloneAnim(Ant.animations.get("walk"), name+"_anim_walk", this.mesh)
-    this.idleAnim = cloneAnim(Ant.animations.get("idle"), name+"_anim_idle", this.mesh)
-    this.biteAnim = cloneAnim(Ant.animations.get("bite"), name+"_anim_bite", this.mesh)
+
+    this.walkAnim = newNodes.animationGroups[2]
+    this.idleAnim = newNodes.animationGroups[1]
+    this.biteAnim = newNodes.animationGroups[0]
+
+
+    //this.walkAnim = cloneAnim(Ant.animations.get("walk"), name+"_anim_walk", this.mesh)
+    //this.idleAnim = cloneAnim(Ant.animations.get("idle"), name+"_anim_idle", this.mesh)
+    //this.biteAnim = cloneAnim(Ant.animations.get("bite"), name+"_anim_bite", this.mesh)
     this.mesh.setEnabled(false)    
   }
 
@@ -157,13 +168,18 @@ export class Ant extends Killable implements IPooledItem<Ant>, IKillable{
   }
 
 
-  static LoadAssets(assMan:AssetsManager){
+  static LoadAssets(assMan:AssetsManager, scene:Scene){
     const task = assMan.addMeshTask("loadant","","assets/", "ant.gltf")
     task.onSuccess = (task)=>{ 
       const root = task.loadedMeshes[0]
-      Ant.antMeshNode = root.getChildTransformNodes(true,n=>n.id == "ant")[0]
-      Ant.animations = new Map<string,AnimationGroup>()
-      task.loadedAnimationGroups.forEach(a=>{ Ant.animations.set(a.name, a)})
+      Ant.container = new AssetContainer(scene)
+      Ant.container.meshes.push(...task.loadedMeshes)
+      Ant.container.skeletons.push(...task.loadedSkeletons)
+      Ant.container.animationGroups.push(...task.loadedAnimationGroups)
+
+      // Ant.antMeshNode = root.getChildTransformNodes(true,n=>n.id == "ant")[0]
+      //Ant.animations = new Map<string,AnimationGroup>()
+      //task.loadedAnimationGroups.forEach(a=>{ Ant.animations.set(a.name, a)})
     }
   } 
 

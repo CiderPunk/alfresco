@@ -99,6 +99,4 @@ export class LocalControl implements IController{
     }
     this.joySteer.set(this.keydir.x, this.keydir.y).normalize()
   }
-
-  
 }
