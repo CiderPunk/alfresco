@@ -14,6 +14,7 @@ export interface IV3{
 }
 
 export interface IGame{
+  setPlayerHealth(number:number)
   addScore(points:number)
   gameOver()
   reset():void

@@ -30,8 +30,18 @@ import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import { Wasp, WaspPool } from "./ents/wasp"
 import { angToVect2 } from "./helpers/mathutils";
 import { Attributes, Component, ComponentChild, ComponentChildren, Ref } from "preact"
+import { HealthBar } from "./ui/healthbar"
 
-export class Game extends Component implements IGame{
+
+export type GameProps={
+  //nothing here
+}
+
+export type GameState = {
+  playerHealth:number
+}
+
+export class Game extends Component<GameProps, GameState> implements IGame{
 
 
   static readonly  initialSpawnProbability = 0.995
@@ -66,8 +76,12 @@ export class Game extends Component implements IGame{
   picnicMesh: AbstractMesh
 
 
-  constructor(){
-    super()
+  constructor(props:GameProps){
+    super(props)
+
+    this.state = {
+      playerHealth:1
+    }
 
     this.componentDidMount = ()=>{ 
       this.init()
@@ -77,6 +91,10 @@ export class Game extends Component implements IGame{
     }
     this.world = new planck.World()
     this.world.on("begin-contact",this.contact)
+  }
+
+  setPlayerHealth(val: number) {
+    this.setState({ playerHealth: val})
   }
 
 
@@ -205,8 +223,6 @@ export class Game extends Component implements IGame{
     picnic.rotation.set(0,0.45,0)
     picnic.position.y-=0.1
 
-
-
     this.gameActive = true
     //paint our first frame!
     this.doFrame()
@@ -312,7 +328,11 @@ export class Game extends Component implements IGame{
 
 
   render(): ComponentChild {
-    return (<div className="gameContainer"></div>)
+    return (
+    
+    <div className="gameContainer"> 
+      <HealthBar health={this.state.playerHealth}/>
+    </div>)
   }
 
 

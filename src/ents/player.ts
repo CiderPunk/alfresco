@@ -11,14 +11,11 @@ import { CollisionGroup, EntityType } from "../enums"
 import planck = require("planck")
 import { Vec2 } from "planck"
 import { Killable } from "./killable"
-import { HealthBar } from "../ui/healthbar"
 
 
 export class Player extends Killable implements IShooter,  IKillable{
 
   static readonly playerHealth = 100
-
-
   protected static lowerMesh:TransformNode
   protected static upperMesh:TransformNode
   static animations: Map<string,AnimationGroup>
@@ -35,7 +32,14 @@ export class Player extends Killable implements IShooter,  IKillable{
   private _groupIndex: number
   dieUpper: AnimationGroup
   dieLower: AnimationGroup
-  healhBar: HealthBar
+
+  public getHealth():number{ return this.health / Player.playerHealth}
+  
+
+  hurt(energy: number, other: IEntity, type: string) {
+    super.hurt(energy, other, type)
+    this.game.setPlayerHealth( this.getHealth())
+  }
 
   get type(): EntityType { return EntityType.player }
   
@@ -71,6 +75,7 @@ export class Player extends Killable implements IShooter,  IKillable{
     this.dieUpper.stop()
     this.standAnim.start(true)
     this.idleAnim.start(true)
+    this.game.setPlayerHealth(1)
     return true
   }
 
@@ -78,17 +83,12 @@ export class Player extends Killable implements IShooter,  IKillable{
    // throw new Error("Method not implemented.")
   }
 
-
   get groupIndex(): number {
     return this._groupIndex
   }
 
-
   constructor(game:IGame, location:IV2){
     super(game,location,0,Player.playerHealth)
-
-    this.healhBar = new HealthBar()
-
 
     this.lower = Player.lowerMesh.clone("playerlower", game.rootNode, false)
     this.upper = Player.upperMesh.clone("playerupper", game.rootNode, false)
@@ -132,7 +132,7 @@ export class Player extends Killable implements IShooter,  IKillable{
   static force:Vec2 = new Vec2()
 
   prePhysics(dT: number): boolean {
-    this.healhBar.updateHealth(this.health / Player.playerHealth)
+
     if (this.alive){
       this.weapon.update(dT)
       this.controller.update()
