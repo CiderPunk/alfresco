@@ -38,7 +38,9 @@ export type GameProps={
 }
 
 export type GameState = {
-  playerHealth:number
+  playerHealth:number,
+  score:number,
+  time:number
 }
 
 export class Game extends Component<GameProps, GameState> implements IGame{
@@ -69,7 +71,6 @@ export class Game extends Component<GameProps, GameState> implements IGame{
   protected spawnProbability:number = Game.initialSpawnProbability
 
   resetGame: boolean
-  scoreDisplay: ScoreDisplay
   gameActive: boolean
   score = 0
   gameTime = 0
@@ -80,7 +81,9 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     super(props)
 
     this.state = {
-      playerHealth:1
+      playerHealth:1,
+      score:0,
+      time:0,
     }
 
     this.componentDidMount = ()=>{ 
@@ -137,9 +140,9 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     }
   }
   addScore(points: number) {
-    this.score+=points
-    this.scoreDisplay.setScore(this.score)
+    this.setState(prev=>{ return {score: prev.score + points }})
   }
+
   gameOver() {
     this.gameActive = false
     this.spawnProbability =  100000
@@ -156,8 +159,6 @@ export class Game extends Component<GameProps, GameState> implements IGame{
   protected contact(contact: planck.Contact): void {
     const ent1 = contact.getFixtureA().getBody().getUserData() as IEntity;
     const ent2 = contact.getFixtureB().getBody().getUserData() as IEntity;
-
-//contact.getTangentSpeed()
 
     if (ent1 && ent2){
       //TODO: check for bullets....
@@ -187,7 +188,6 @@ export class Game extends Component<GameProps, GameState> implements IGame{
 
   initScene():void {
 
-    this.scoreDisplay = new ScoreDisplay()
 
     this.container.moveAllFromScene()
     this.camera = new TargetCamera("Camera1", new Vector3(0,0,100), this.scene, true)    
@@ -239,10 +239,7 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     this.ents.swap(this.scratch)
     this.spawnProbability = Game.initialSpawnProbability 
     this.gameActive = true
-    this.score = 0
-    this.gameTime = 0
-    this.scoreDisplay.setScore(0)
-    this.scoreDisplay.setTime(0)
+    this.setState({ score:0, time:0, playerHealth:1})
 
   }
 
@@ -263,7 +260,7 @@ export class Game extends Component<GameProps, GameState> implements IGame{
 
     //get time and last time..
     if (this.gameActive){    
-      this.scoreDisplay.setTime(this.gameTime)    
+      this.setState({ time: this.gameTime })
     }
 
     const  time:number = performance.now()
@@ -329,9 +326,9 @@ export class Game extends Component<GameProps, GameState> implements IGame{
 
   render(): ComponentChild {
     return (
-    
     <div className="gameContainer"> 
       <HealthBar health={this.state.playerHealth}/>
+      <ScoreDisplay time={this.state.time} score={this.state.score}/>
     </div>)
   }
 
