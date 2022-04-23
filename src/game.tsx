@@ -31,6 +31,8 @@ import { Wasp, WaspPool } from "./ents/wasp"
 import { angToVect2 } from "./helpers/mathutils";
 import {  Component, ComponentChild } from "preact"
 import { HealthBar } from "./ui/healthbar"
+import { Intro } from "./ui/intro"
+import { GameSummary } from "./ui/gamesummary"
 
 
 enum PlayState{
@@ -89,7 +91,7 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     super(props)
 
     this.state = {
-      playState:PlayState.playing,
+      playState:PlayState.intro,
       playerHealth:1,
       score:0,
       time:0,
@@ -153,6 +155,9 @@ export class Game extends Component<GameProps, GameState> implements IGame{
   }
 
   gameOver() {
+
+    this.setState({ playState:PlayState.gameover})
+
     this.gameActive = false
     this.spawnProbability =  100000
   }
@@ -246,7 +251,7 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     this.ents.swap(this.scratch)
     this.spawnProbability = Game.initialSpawnProbability 
     this.gameActive = true
-    this.setState({ score:0, time:0, playerHealth:1})
+    this.setState({ score:0, time:0, playerHealth:1, playState:PlayState.playing})
     this.gameTime = 0
   }
 
@@ -337,16 +342,20 @@ export class Game extends Component<GameProps, GameState> implements IGame{
         break
 
       case PlayState.intro:
-        ui = <div class="modal">
-                <div class="modal-background"></div>
-                <div class="modal-content">
-                  Hell0 thar
-                </div>
-                <button class="modal-close is-large" aria-label="close"></button>
-              </div>
+        ui = <Intro start={()=>{ this.startGame() }}/>
         break
+
+      case PlayState.gameover:
+        ui= <GameSummary start={()=>{ this.startGame() }}/>
+
     }
     return (<div className="game">{ui}</div>)
+  }
+
+
+  startGame() {
+
+    this.doReset()
   }
 
 
