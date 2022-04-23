@@ -56,7 +56,6 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
     this.body.setActive(false)
     const newNodes = Wasp.container.instantiateModelsToScene(sn=>(name+"_"+sn), false)  
     this.mesh = newNodes.rootNodes[0] as AbstractMesh
-
     this.flyAnim = newNodes.animationGroups[0]
     this.idleAnim = newNodes.animationGroups[1]
     this.stingAnim = newNodes.animationGroups[2]
@@ -138,8 +137,10 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
       angleDiff += angleDiff > Math.PI ? -(2 * Math.PI) : angleDiff < -Math.PI ? (2*Math.PI) : 0
  
       const acc = Math.abs(angleDiff) > Wasp.onTargetAngle ? Wasp.offTargetForce : Wasp.onTargetForce
-      const turn = speed > 10 ?  Wasp.fastTurnRate : Wasp.slowFurnForce 
-    
+      const turn = Math.min( speed > 10 ?  Wasp.fastTurnRate : Wasp.slowFurnForce , Math.abs(angleDiff))
+      
+
+
       this.body.applyTorque( angleDiff > 0 ? turn : -turn)
       this.body.applyForceToCenter(angToVect2(facing, acc, this.force) as Vec2)
 

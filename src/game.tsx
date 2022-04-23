@@ -29,8 +29,16 @@ import { ScoreDisplay } from "./ui/scoredisplay"
 import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import { Wasp, WaspPool } from "./ents/wasp"
 import { angToVect2 } from "./helpers/mathutils";
-import { Attributes, Component, ComponentChild, ComponentChildren, Ref } from "preact"
+import {  Component, ComponentChild } from "preact"
 import { HealthBar } from "./ui/healthbar"
+
+
+enum PlayState{
+  intro,
+  playing,
+  gameover
+
+}
 
 
 export type GameProps={
@@ -40,7 +48,8 @@ export type GameProps={
 export type GameState = {
   playerHealth:number,
   score:number,
-  time:number
+  time:number,
+  playState:PlayState
 }
 
 export class Game extends Component<GameProps, GameState> implements IGame{
@@ -72,7 +81,6 @@ export class Game extends Component<GameProps, GameState> implements IGame{
 
   resetGame: boolean
   gameActive: boolean
-  score = 0
   gameTime = 0
   picnicMesh: AbstractMesh
 
@@ -81,6 +89,7 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     super(props)
 
     this.state = {
+      playState:PlayState.playing,
       playerHealth:1,
       score:0,
       time:0,
@@ -187,8 +196,6 @@ export class Game extends Component<GameProps, GameState> implements IGame{
   }
 
   initScene():void {
-
-
     this.container.moveAllFromScene()
     this.camera = new TargetCamera("Camera1", new Vector3(0,0,100), this.scene, true)    
     this.camera.position.set(0,70,70 )
@@ -240,7 +247,7 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     this.spawnProbability = Game.initialSpawnProbability 
     this.gameActive = true
     this.setState({ score:0, time:0, playerHealth:1})
-
+    this.gameTime = 0
   }
 
   protected doFrame():void{
@@ -258,63 +265,57 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     this.scene.render()
     this.engine.endFrame()
 
-    //get time and last time..
-    if (this.gameActive){    
-      this.setState({ time: this.gameTime })
-    }
 
+    //get time and last time..
     const  time:number = performance.now()
     const dt = time - this.lastFrame
     this.lastFrame = time
 
-    //how far behind realtime is tick time
-    const delta = time - this.tickTime
-    //skip if we're really late..
-    if (delta > 200){
-      this.tickTime = time
-    }
 
-    while(this.tickTime < time){
-
-      this.spawnProbability -= Game.spawnProbabilityRate
-      //do we spawn a new ant?
+    if (this.state.playState == PlayState.playing){    
+      this.setState({ time: this.gameTime })
 
 
-      if (Math.random() > this.spawnProbability){
-
-        if (Math.random() > 0.75){
-          const wasp = this.spawnWasp()
-           wasp.init(angToVect2(Math.random() * 2 * Math.PI, 15), this.player, 30)
-        }
-        else{
-          const ant = this.spawnAnt()
-          ant.init(angToVect2(Math.random() * 2 * Math.PI, 15), this.player, 30)
-        }
+      //how far behind realtime is tick time
+      const delta = time - this.tickTime
+      //skip if we're really late..
+      if (delta > 200){
+        this.tickTime = time
       }
 
+      while(this.tickTime < time){
 
-      let ent:IEntity  
-      //pre-phys all our ents
-      while(ent = this.ents.pop()){
-        if (ent.prePhysics(Constants.TickLength * 1000)){
-          //moce ents to scratch if they persist
-          this.scratch.push(ent)
+        this.spawnProbability -= Game.spawnProbabilityRate
+        //do we spawn a new ant?
+
+        if (Math.random() > this.spawnProbability){
+
+          if (Math.random() > 0.75){
+            const wasp = this.spawnWasp()
+            wasp.init(angToVect2(Math.random() * 2 * Math.PI, 15), this.player, 30)
+          }
+          else{
+            const ant = this.spawnAnt()
+            ant.init(angToVect2(Math.random() * 2 * Math.PI, 15), this.player, 30)
+          }
         }
-      }
-      //swap scratch for main ent list...
-      this.ents.swap(this.scratch)
-      //physics step
 
-      if (this.gameActive){
-        
-        
+        let ent:IEntity  
+        //pre-phys all our ents
+        while(ent = this.ents.pop()){
+          if (ent.prePhysics(Constants.TickLength * 1000)){
+            //moce ents to scratch if they persist
+            this.scratch.push(ent)
+          }
+        }
+        //swap scratch for main ent list...
+        this.ents.swap(this.scratch)
+        //physics step
+
         this.world.step(Constants.TickLength )
+        this.tickTime+= (Constants.TickLength * 1000)
+        this.gameTime += Constants.TickLength
       }
-      this.tickTime+= (Constants.TickLength * 1000)
-      
-      this.gameTime += Constants.TickLength
-
-
     }
 
     this.ents.forEach((ent:IEntity)=>ent.preDraw(dt)) 
@@ -324,12 +325,28 @@ export class Game extends Component<GameProps, GameState> implements IGame{
 
 
 
-  render(): ComponentChild {
-    return (
-    <div className="gameContainer"> 
-      <HealthBar health={this.state.playerHealth}/>
-      <ScoreDisplay time={this.state.time} score={this.state.score}/>
-    </div>)
+  public render(): ComponentChild {
+    let ui = <></>
+    switch(this.state.playState){
+      case PlayState.playing:
+        ui = (<>
+          <HealthBar health={this.state.playerHealth}/>
+          <ScoreDisplay time={this.state.time} score={this.state.score}/>
+          <div id="overlay"></div>
+        </>)
+        break
+
+      case PlayState.intro:
+        ui = <div class="modal">
+                <div class="modal-background"></div>
+                <div class="modal-content">
+                  Hell0 thar
+                </div>
+                <button class="modal-close is-large" aria-label="close"></button>
+              </div>
+        break
+    }
+    return (<div className="game">{ui}</div>)
   }
 
 
