@@ -144,11 +144,6 @@ export class Player extends Killable implements IShooter,  IKillable{
         this.weapon.fire(this)
       }
     }
-    else{
-      if (this.controller.fire1){
-        this.game.reset()
-      }
-    }
     return true
   }
 

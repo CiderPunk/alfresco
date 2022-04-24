@@ -35,11 +35,11 @@ import { Intro } from "./ui/intro"
 import { GameSummary } from "./ui/gamesummary"
 
 
-enum PlayState{
+enum PlayState {
   intro,
   playing,
-  gameover
-
+  gameover,
+  ending
 }
 
 
@@ -85,6 +85,7 @@ export class Game extends Component<GameProps, GameState> implements IGame{
   gameActive: boolean
   gameTime = 0
   picnicMesh: AbstractMesh
+  timeToLive:number
 
 
   constructor(props:GameProps){
@@ -156,10 +157,9 @@ export class Game extends Component<GameProps, GameState> implements IGame{
 
   gameOver() {
 
-    this.setState({ playState:PlayState.gameover})
-
+    this.setState({ playState:PlayState.ending})
     this.gameActive = false
-    this.spawnProbability =  100000
+    this.timeToLive = 1000
   }
 
   reset(): void {
@@ -279,8 +279,6 @@ export class Game extends Component<GameProps, GameState> implements IGame{
 
     if (this.state.playState == PlayState.playing){    
       this.setState({ time: this.gameTime })
-
-
       //how far behind realtime is tick time
       const delta = time - this.tickTime
       //skip if we're really late..
@@ -322,6 +320,13 @@ export class Game extends Component<GameProps, GameState> implements IGame{
         this.gameTime += Constants.TickLength
       }
     }
+    if (this.state.playState == PlayState.ending){
+      if ((this.timeToLive-=dt) < 0){
+        this.setState({playState:PlayState.gameover})
+
+      }
+
+    }
 
     this.ents.forEach((ent:IEntity)=>ent.preDraw(dt)) 
     
@@ -334,27 +339,27 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     let ui = <></>
     switch(this.state.playState){
       case PlayState.playing:
-        ui = (<>
+      case PlayState.ending:
+        ui = ( <div id="overlay">
           <HealthBar health={this.state.playerHealth}/>
           <ScoreDisplay time={this.state.time} score={this.state.score}/>
-          <div id="overlay"></div>
-        </>)
+         </div>
+        )
         break
 
       case PlayState.intro:
-        ui = <Intro start={()=>{ this.startGame() }}/>
+        ui = (<Intro start={()=>{ this.startGame() }}/>)
         break
 
       case PlayState.gameover:
-        ui= <GameSummary start={()=>{ this.startGame() }}/>
-
+        ui= (<GameSummary start={()=>{ this.startGame() }} score={this.state.score} time={this.state.time}/>)
+        break
     }
     return (<div className="game">{ui}</div>)
   }
 
 
   startGame() {
-
     this.doReset()
   }
 
