@@ -93,6 +93,10 @@ export class Player extends Killable implements IShooter,  IKillable{
     this.lower = Player.lowerMesh.clone("playerlower", game.rootNode, false)
     this.upper = Player.upperMesh.clone("playerupper", game.rootNode, false)
 
+    const gunleft = this.upper.getChildMeshes(false, n=>n.name.endsWith("gun_left"))[0]
+
+    gunleft.setEnabled(false)
+
     this.upper.rotationQuaternion = null
     this.lower.rotationQuaternion = null
 
@@ -206,7 +210,7 @@ export class Player extends Killable implements IShooter,  IKillable{
   }
 
   static LoadAssets(assMan:AssetsManager){
-    const task = assMan.addMeshTask("loadpersonmesh","","assets/", "person.gltf")
+    const task = assMan.addMeshTask("loadpersonmesh","","assets/", "person2.glb")
     task.onSuccess = (task)=>{ 
       const root = task.loadedMeshes[0]
       Player.lowerMesh = root.getChildTransformNodes(true,n=>n.id == "lower")[0]
