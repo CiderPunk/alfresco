@@ -221,7 +221,7 @@ export class Game extends Component<GameProps, GameState> implements IGame{
     this.antPool = new AntPool(this)
     this.waspPool = new WaspPool(this)
 
-    this.player = new Player(this, new Vector3(0,0,0))
+    this.player = new Player("player1", this, new Vector3(0,0,0))
     
     //this.camera.lockedTarget = this.player
     
@@ -365,7 +365,7 @@ export class Game extends Component<GameProps, GameState> implements IGame{
 
 
   private loadAssets(assMan:AssetsManager){
-    Player.LoadAssets(assMan)
+    Player.LoadAssets(assMan, this.scene)
     Ant.LoadAssets(assMan, this.scene)
     Wasp.LoadAssets(assMan, this.scene)
 

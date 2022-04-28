@@ -11,6 +11,8 @@ import { CollisionGroup, EntityType } from "../enums"
 import planck = require("planck")
 import { Vec2 } from "planck"
 import { Killable } from "./killable"
+import { AssetContainer } from "@babylonjs/core/assetContainer"
+import { Scene } from "@babylonjs/core/scene"
 
 
 export class Player extends Killable implements IShooter,  IKillable{
@@ -32,6 +34,7 @@ export class Player extends Killable implements IShooter,  IKillable{
   private _groupIndex: number
   dieUpper: AnimationGroup
   dieLower: AnimationGroup
+  static container: AssetContainer
 
   public getHealth():number{ return this.health / Player.playerHealth}
   
@@ -87,11 +90,15 @@ export class Player extends Killable implements IShooter,  IKillable{
     return this._groupIndex
   }
 
-  constructor(game:IGame, location:IV2){
+  constructor(name:string, game:IGame, location:IV2){
     super(game,location,0,Player.playerHealth)
+    const nodes = Player.container.instantiateModelsToScene(sn=>(name+"_"+sn),false)
 
-    this.lower = Player.lowerMesh.clone("playerlower", game.rootNode, false)
-    this.upper = Player.upperMesh.clone("playerupper", game.rootNode, false)
+    this.lower = nodes.rootNodes[0].getChildTransformNodes(false, n=>n.name.endsWith('lower'))[0]
+    this.upper = nodes.rootNodes[0].getChildTransformNodes(false, n=>n.name.endsWith('upper'))[0]
+
+    //this.lower = Player.lowerMesh.clone("playerlower", game.rootNode, false)
+    //this.upper = Player.upperMesh.clone("playerupper", game.rootNode, false)
 
     const gunleft = this.upper.getChildMeshes(false, n=>n.name.endsWith("gun_left"))[0]
 
@@ -100,20 +107,18 @@ export class Player extends Killable implements IShooter,  IKillable{
     this.upper.rotationQuaternion = null
     this.lower.rotationQuaternion = null
 
-    this.walkAnim = cloneAnim(Player.animations.get("walk"), "player_walk", this.lower)
-    this.standAnim = cloneAnim(Player.animations.get("stand"), "player_stand", this.lower)
-    this.dieLower = cloneAnim(Player.animations.get("die-lower"), "player_lower_die", this.lower)
-    this.idleAnim = cloneAnim(Player.animations.get("idle"), "player_idle", this.upper)
-    this.shootAnim = cloneAnim(Player.animations.get("shoot"), "player_shoot", this.upper)
-    this.dieUpper = cloneAnim(Player.animations.get("die-upper"), "player_upper_die", this.upper)
+    this.walkAnim = nodes.animationGroups.find(ag=>ag.name == "walk")
+    this.standAnim = nodes.animationGroups.find(ag=>ag.name == "stand")
+    this.dieLower = nodes.animationGroups.find(ag=>ag.name == "die-lower")
+    this.dieUpper = nodes.animationGroups.find(ag=>ag.name == "die-upper")
+    
+    
+    this.shootAnim = nodes.animationGroups.find(ag=>ag.name == "shoot")
+    this.idleAnim = nodes.animationGroups.find(ag=>ag.name== "idle")
+ //this.shootAnim = nodes.animationGroups.find(ag=>ag.name == "shoot-left")
+ //this.idleAnim = nodes.animationGroups.find(ag=>ag.name== "idle-onehand")
 
-    this.shootAnim.loopAnimation = false
-    this.game.scene.addAnimationGroup(this.walkAnim)   
-    this.game.scene.addAnimationGroup(this.standAnim)   
-    this.game.scene.addAnimationGroup(this.idleAnim)     
-    this.game.scene.addAnimationGroup(this.shootAnim)     
-    this.game.scene.addAnimationGroup(this.dieLower)     
-    this.game.scene.addAnimationGroup(this.dieUpper)     
+
 
     this.dieLower.stop()
     this.standAnim.start(true)
@@ -209,17 +214,22 @@ export class Player extends Killable implements IShooter,  IKillable{
     return new Vector2(pos.x, pos.y)
   }
 
-  static LoadAssets(assMan:AssetsManager){
+  static LoadAssets(assMan:AssetsManager, scene:Scene){
     const task = assMan.addMeshTask("loadpersonmesh","","assets/", "person2.glb")
     task.onSuccess = (task)=>{ 
+      Player.container = new AssetContainer(scene)
+      Player.container.meshes.push(...task.loadedMeshes)
+      Player.container.skeletons.push(...task.loadedSkeletons)
+      Player.container.animationGroups.push(...task.loadedAnimationGroups)
+      
+      /*
       const root = task.loadedMeshes[0]
       Player.lowerMesh = root.getChildTransformNodes(true,n=>n.id == "lower")[0]
       Player.upperMesh = root.getChildTransformNodes(true,n=>n.id == "upper")[0]
       Player.animations = new Map<string,AnimationGroup>()
       task.loadedAnimationGroups.forEach(a=>{ Player.animations.set(a.name, a)})
+      */
     }
   } 
-
-
 
 }

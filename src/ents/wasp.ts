@@ -206,7 +206,7 @@ export class Wasp extends Killable implements IPooledItem<Wasp>, IKillable{
   static LoadAssets(assMan:AssetsManager, scene:Scene){
     //const task = assMan.addMeshTask("mesh", null, "https://raw.githubusercontent.com/CiderPunk/alfresco/main/dist/assets/", "wasp.gltf")
       
-    const task = assMan.addMeshTask("loadant","","assets/", "wasp.gltf")
+    const task = assMan.addMeshTask("loadwasp","","assets/", "wasp.gltf")
     task.onSuccess = (task)=>{ 
       Wasp.container = new AssetContainer(scene)
       Wasp.container.meshes.push(...task.loadedMeshes)
