@@ -35,6 +35,10 @@ export class Player extends Killable implements IShooter,  IKillable{
   dieUpper: AnimationGroup
   dieLower: AnimationGroup
   static container: AssetContainer
+  shootRightAnim: AnimationGroup
+  idlePistolAnim: AnimationGroup
+  shootLeftAnim: AnimationGroup
+  idleAkimboAnim: AnimationGroup
 
   public getHealth():number{ return this.health / Player.playerHealth}
   
@@ -115,10 +119,10 @@ export class Player extends Killable implements IShooter,  IKillable{
     
     this.shootAnim = nodes.animationGroups.find(ag=>ag.name == "shoot")
     this.idleAnim = nodes.animationGroups.find(ag=>ag.name== "idle")
- //this.shootAnim = nodes.animationGroups.find(ag=>ag.name == "shoot-left")
- //this.idleAnim = nodes.animationGroups.find(ag=>ag.name== "idle-onehand")
-
-
+    this.shootRightAnim = nodes.animationGroups.find(ag=>ag.name == "shoot-right")
+    this.idlePistolAnim = nodes.animationGroups.find(ag=>ag.name== "idle-onehand")
+    this.shootLeftAnim = nodes.animationGroups.find(ag=>ag.name == "shoot-left")
+    this.idleAkimboAnim = nodes.animationGroups.find(ag=>ag.name== "idle-twohand")
 
     this.dieLower.stop()
     this.standAnim.start(true)
